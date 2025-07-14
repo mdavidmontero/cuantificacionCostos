@@ -7,6 +7,7 @@ interface IUser {
   name: string;
   email: string;
   image: string;
+  organizationId: string;
 }
 
 declare global {
@@ -43,12 +44,6 @@ export const isAuthenticated = async (
           role: true,
           image: true,
           organizationId: true,
-          organization: {
-            select: {
-              name: true,
-              nit: true,
-            },
-          },
         },
       });
       if (user) {
