@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import authRouter from "./routes/authRoutes";
-import materialRouter from "./routes/materialRoutes";
+import materialRouter from "./routes/MaterialRoutes";
 import organizationRouter from "./routes/organizationRoutes";
 import cors from "cors";
 import { corsConfig } from "./config/cors";
