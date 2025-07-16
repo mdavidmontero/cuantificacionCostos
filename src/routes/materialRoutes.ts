@@ -20,7 +20,7 @@ router.post(
 );
 router.patch(
   "/update-materia/:id",
-  body("name").isLength({ min: 3 }).withMessage("Nombre inválido"),
+  body("nombre").isLength({ min: 3 }).withMessage("Nombre inválido"),
   handleInputErrors,
   isAuthenticated,
   updateMateriaPrima

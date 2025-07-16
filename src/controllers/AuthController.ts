@@ -12,7 +12,7 @@ export const createAccount = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, nameOrganization, nit } = req.body;
 
     const userExist = await prisma.user.findFirst({
       where: {
@@ -24,19 +24,34 @@ export const createAccount = async (
       return res.status(409).json({ error: error.message });
     }
 
-    const passwordHash = await hashPassword(password);
-
-    const data = {
-      name,
-      email,
-      password: passwordHash,
-      confirmed: true,
-      token: generateToken(),
-    };
-    await prisma.user.create({
-      data: data,
+    const organization = await prisma.organization.findFirst({
+      where: {
+        nit: nit,
+      },
     });
 
+    if (organization) {
+      const error = new Error("El nit de la organizacion ya esta registrado");
+      return res.status(409).json({ error: error.message });
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    await prisma.user.create({
+      data: {
+        name: name,
+        email: email,
+        password: passwordHash,
+        confirmed: true,
+        token: generateToken(),
+        organization: {
+          create: {
+            name: nameOrganization,
+            nit: nit,
+          },
+        },
+      },
+    });
     res.send("Cuenta creada correctamente");
   } catch (error) {
     console.log(error);

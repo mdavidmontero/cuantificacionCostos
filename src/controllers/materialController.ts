@@ -30,10 +30,11 @@ export const createMateriaPrima = async (req: Request, res: Response) => {
 
 export const updateMateriaPrima = async (req: Request, res: Response) => {
   try {
-    const { id, name } = req.body;
+    const { id } = req.params;
+    const { nombre } = req.body;
     const materiaPrima = await prisma.productos.findFirst({
       where: {
-        id: id,
+        id: +id,
         organizacionId: req.user.organizationId,
       },
     });
@@ -46,7 +47,7 @@ export const updateMateriaPrima = async (req: Request, res: Response) => {
         id: materiaPrima.id,
       },
       data: {
-        nombre: name,
+        nombre,
       },
     });
     res.send("Materia prima actualizada correctamente");
