@@ -20,5 +20,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/organization", organizationRouter);
 app.use("/api/material", materialRouter);
 app.use("/api/units", unitsRouter);
+app.use("/api/costs", unitsRouter);
 
 export default app;

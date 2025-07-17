@@ -83,8 +83,7 @@ model MateriaPrimaDirecta {
   registroId     String
   registro       RegistroCostoProduccion @relation(fields: [registroId], references: [id])
   name           String
-  unidadMedidaId String
-  // unidadMedida   UnidadMedida            @relation(fields: [unidadMedidaId], references: [id])
+  unidadMedida   String
   cantidad       Float
   costoUnitario  Float
   costoTotal     Float
@@ -93,25 +92,22 @@ model MateriaPrimaDirecta {
 }
 
 model ManoObraDirecta {
-  id             Int          @id @default(autoincrement())
-  nombre         String
-  unidadMedidaId String
-  // unidadMedida   UnidadMedida @relation(fields: [unidadMedidaId], references: [id])
-  cantidad       Float
-  costoUnitario  Float
-  costoTotal     Float
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime     @default(now())
-
+  id                      Int                       @id @default(autoincrement())
+  nombre                  String
+  unidadMedida            String
+  cantidad                Float
+  costoUnitario           Float
+  costoTotal              Float
+  organizationId          String
+  organization            Organization              @relation(fields: [organizationId], references: [id])
+  createdAt               DateTime                  @default(now())
   RegistroCostoProduccion RegistroCostoProduccion[]
 }
 
 model CostosIndirectosFabricacion {
   id             Int          @id @default(autoincrement())
   nombre         String
-  unidadMedidaId String
-  // unidadMedida   UnidadMedida @relation(fields: [unidadMedidaId], references: [id])
+  unidadMedida   String
   cantidad       Float
   costoUnitario  Float
   costoTotal     Float
@@ -125,8 +121,7 @@ model CostosIndirectosFabricacion {
 model ManoObraIndirecta {
   id             Int          @id @default(autoincrement())
   nombre         String
-  unidadMedidaId String
-  // unidadMedida   UnidadMedida @relation(fields: [unidadMedidaId], references: [id])
+  unidadMedida   String
   costoUnitario  Float
   costoTotal     Float
   organizationId String
@@ -192,7 +187,7 @@ model CostosProduccion {
 
 model RegistroCostoProduccion {
   id             String       @id @default(uuid())
-  date           DateTime
+  date           DateTime     @default(now())
   productoId     Int
   producto       Productos    @relation(fields: [productoId], references: [id])
   organizationId String
