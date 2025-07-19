@@ -113,3 +113,21 @@ export const deleteMateriaPrima = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Error al eliminar materia prima" });
   }
 };
+
+export const searchMaterialPrima = async (req: Request, res: Response) => {
+  try {
+    const { name } = req.query;
+    const materiaPrima = await prisma.productos.findMany({
+      where: {
+        nombre: {
+          contains: name.toString(),
+          mode: "insensitive",
+        },
+        organizacionId: req.user.organizationId,
+      },
+    });
+    res.json(materiaPrima);
+  } catch (error) {
+    res.status(500).json({ error: "Error al buscar materia prima" });
+  }
+};

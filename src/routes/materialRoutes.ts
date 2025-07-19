@@ -4,6 +4,7 @@ import {
   updateMateriaPrima,
   getMateriaPrimaById,
   getMateriaPrimas,
+  searchMaterialPrima,
 } from "../controllers/MaterialController";
 import { body } from "express-validator";
 import { handleInputErrors } from "../middleware/validation";
@@ -27,5 +28,6 @@ router.patch(
 );
 router.get("/get-materia-by-id/:id", isAuthenticated, getMateriaPrimaById);
 router.get("/get-materias", isAuthenticated, getMateriaPrimas);
+router.get("/search-materia", isAuthenticated, searchMaterialPrima);
 
 export default router;
