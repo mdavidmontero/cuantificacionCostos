@@ -4,6 +4,7 @@ import morgan from "morgan";
 import authRouter from "./routes/authRoutes";
 import materialRouter from "./routes/materialRoutes";
 import unitsRouter from "./routes/unitsRoutes";
+import costsRouter from "./routes/costsRoutes";
 import organizationRouter from "./routes/organizationRoutes";
 import cors from "cors";
 import { corsConfig } from "./config/cors";
@@ -20,6 +21,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/organization", organizationRouter);
 app.use("/api/material", materialRouter);
 app.use("/api/units", unitsRouter);
-app.use("/api/costs", unitsRouter);
+app.use("/api/costs", costsRouter);
 
 export default app;

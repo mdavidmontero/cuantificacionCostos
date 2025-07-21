@@ -122,6 +122,7 @@ model ManoObraIndirecta {
   id             Int          @id @default(autoincrement())
   nombre         String
   unidadMedida   String
+  cantidad       Float
   costoUnitario  Float
   costoTotal     Float
   organizationId String
@@ -135,7 +136,6 @@ model CostosGenerales {
   id             Int          @id @default(autoincrement())
   nombre         String
   valorTotal     Float
-  costosTotales  Float
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
@@ -147,7 +147,6 @@ model CostosOperacion {
   id             Int          @id @default(autoincrement())
   nombre         String
   valorTotal     Float
-  totales        Float
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
@@ -159,7 +158,6 @@ model GastosVentas {
   id             Int          @id @default(autoincrement())
   nombre         String
   valorTotal     Float
-  totales        Float
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
@@ -186,12 +184,16 @@ model CostosProduccion {
 }
 
 model RegistroCostoProduccion {
-  id             String       @id @default(uuid())
-  date           DateTime     @default(now())
-  productoId     Int
-  producto       Productos    @relation(fields: [productoId], references: [id])
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  id                String       @id @default(uuid())
+  date              DateTime     @default(now())
+  productoId        Int
+  producto          Productos    @relation(fields: [productoId], references: [id])
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  unidadMedida      String
+  cantidadProducida Float
+  perdidasEstimadas Float
+  cantidadesFinales Float
 
   materiaPrimaDirecta         MateriaPrimaDirecta[]
   manoObraDirecta             ManoObraDirecta[]
