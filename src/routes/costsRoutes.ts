@@ -1,10 +1,16 @@
 import { Router } from "express";
 
 import { isAuthenticated } from "../middleware/auth";
-import { createCosts } from "../controllers/CostsController";
+import {
+  createCosts,
+  getAllRegistrosCostos,
+  getRegistroCompleto,
+} from "../controllers/CostsController";
 
 const router = Router();
 
 router.post("/create-costs", isAuthenticated, createCosts);
+router.get("/get-all-costs", isAuthenticated, getAllRegistrosCostos);
+router.get("/get-cost-by-id/:id", getRegistroCompleto);
 
 export default router;

@@ -5,7 +5,7 @@ export const createMateriaPrima = async (req: Request, res: Response) => {
   try {
     const { name } = req.body;
 
-    const materialExists = await prisma.productos.findFirst({
+    const materialExists = await prisma.materiaPrima.findFirst({
       where: {
         nombre: name.toUpperCase(),
         organizacionId: req.user.organizationId,
@@ -15,7 +15,7 @@ export const createMateriaPrima = async (req: Request, res: Response) => {
       const error = new Error("La materia prima ya existe");
       return res.status(409).json({ error: error.message });
     }
-    await prisma.productos.create({
+    await prisma.materiaPrima.create({
       data: {
         nombre: name,
         organizacionId: req.user.organizationId,
@@ -32,7 +32,7 @@ export const updateMateriaPrima = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { nombre } = req.body;
-    const materiaPrima = await prisma.productos.findFirst({
+    const materiaPrima = await prisma.materiaPrima.findFirst({
       where: {
         id: +id,
         organizacionId: req.user.organizationId,
@@ -42,7 +42,7 @@ export const updateMateriaPrima = async (req: Request, res: Response) => {
       const error = new Error("Materia prima no encontrada");
       return res.status(404).json({ error: error.message });
     }
-    await prisma.productos.update({
+    await prisma.materiaPrima.update({
       where: {
         id: materiaPrima.id,
       },
@@ -52,14 +52,13 @@ export const updateMateriaPrima = async (req: Request, res: Response) => {
     });
     res.send("Materia prima actualizada correctamente");
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Error al actualizar materia prima" });
   }
 };
 
 export const getMateriaPrimaById = async (req: Request, res: Response) => {
   try {
-    const materiaPrima = await prisma.productos.findFirst({
+    const materiaPrima = await prisma.materiaPrima.findFirst({
       where: {
         id: +req.params.id,
         organizacionId: req.user.organizationId,
@@ -71,14 +70,13 @@ export const getMateriaPrimaById = async (req: Request, res: Response) => {
     }
     res.json(materiaPrima);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Error al obtener materia prima" });
   }
 };
 
 export const getMateriaPrimas = async (req: Request, res: Response) => {
   try {
-    const materiaPrimas = await prisma.productos.findMany({
+    const materiaPrimas = await prisma.materiaPrima.findMany({
       where: {
         organizacionId: req.user.organizationId,
       },
@@ -92,7 +90,7 @@ export const getMateriaPrimas = async (req: Request, res: Response) => {
 
 export const deleteMateriaPrima = async (req: Request, res: Response) => {
   try {
-    const materiaPrima = await prisma.productos.findFirst({
+    const materiaPrima = await prisma.materiaPrima.findFirst({
       where: {
         id: +req.params.id,
         organizacionId: req.user.organizationId,
@@ -102,7 +100,7 @@ export const deleteMateriaPrima = async (req: Request, res: Response) => {
       const error = new Error("Materia prima no encontrada");
       return res.status(404).json({ error: error.message });
     }
-    await prisma.productos.delete({
+    await prisma.materiaPrima.delete({
       where: {
         id: materiaPrima.id,
       },
@@ -117,7 +115,7 @@ export const deleteMateriaPrima = async (req: Request, res: Response) => {
 export const searchMaterialPrima = async (req: Request, res: Response) => {
   try {
     const { name } = req.query;
-    const materiaPrima = await prisma.productos.findMany({
+    const materiaPrima = await prisma.materiaPrima.findMany({
       where: {
         nombre: {
           contains: name.toString(),
