@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { MateriaPrimaDirecta } from "@prisma/client";
+import { format, parseISO, startOfWeek } from "date-fns";
 
 export const createCosts = async (req: Request, res: Response) => {
   try {
@@ -147,55 +148,6 @@ export const getRegistroCompleto = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Registro no encontrado" });
     }
     res.send(registro);
-    // const resumen = {
-    //   id: registro.id,
-    //   date: registro.date.toISOString(),
-    //   unidadMedida: registro.unidadMedida,
-    //   cantidadProducida: registro.cantidadProducida,
-    //   cantidadesFinales: registro.cantidadesFinales,
-    //   producto: {
-    //     nombre: registro.producto.nombre,
-    //   },
-    //   organization: {
-    //     name: registro.organization.name,
-    //   },
-    //   costoProduccion: {
-    //     totalGastosProduccion:
-    //       registro.costoProduccion?.totalGastosProduccion ?? null,
-    //     totalCostoProduccionUnitario:
-    //       registro.costoProduccion?.totalCostoProduccionUnitario ?? null,
-    //     precioVentaUnitario:
-    //       registro.costoProduccion?.precioVentaUnitario ?? null,
-    //     margenUtilidadUnitario:
-    //       registro.costoProduccion?.margenUtilidadUnitario ?? null,
-    //   },
-    //   materiaPrimaDirecta: registro.materiaPrimaDirecta.map((item) => ({
-    //     name: item.name,
-    //     cantidad: item.cantidad,
-    //     costoTotal: item.costoTotal,
-    //   })),
-    //   manoObraDirecta: registro.manoObraDirecta.map((item) => ({
-    //     nombre: item.nombre,
-    //     cantidad: item.cantidad,
-    //     costoTotal: item.costoTotal,
-    //   })),
-    //   costosIndirectosFabricacion: registro.costosIndirectosFabricacion.map(
-    //     (item) => ({
-    //       nombre: item.nombre,
-    //       cantidad: item.cantidad,
-    //       costoTotal: item.costoTotal,
-    //     })
-    //   ),
-    //   costosGenerales: registro.costosGenerales.map((item) => ({
-    //     nombre: item.nombre,
-    //     valorTotal: item.valorTotal,
-    //   })),
-    //   gastosVentas: registro.gastosVentas.map((item) => ({
-    //     nombre: item.nombre,
-    //     valorTotal: item.valorTotal,
-    //   })),
-    // };
-    // return res.status(200).json(resumen);
   } catch (error) {
     console.error("Error al obtener el registro completo:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
@@ -225,6 +177,84 @@ export const getAllRegistrosCostos = async (req: Request, res: Response) => {
     return res.status(200).json(registros);
   } catch (error) {
     console.error("Error al obtener los registros de costos:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al obtener los registros de costos." });
+  }
+};
+
+export const getEvolucionCostos = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate, modo = "dia", productoId } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        message:
+          "Debe proporcionar 'startDate' y 'endDate' en formato YYYY-MM-DD",
+      });
+    }
+    const start = parseISO(startDate as string);
+    const end = parseISO(endDate as string);
+    const whereClause = productoId
+      ? {
+          date: {
+            gte: start,
+            lte: end,
+          },
+          productoId: +productoId,
+        }
+      : {
+          date: {
+            gte: start,
+            lte: end,
+          },
+        };
+    const registros = await prisma.registroCostoProduccion.findMany({
+      where: whereClause,
+      orderBy: {
+        date: "asc",
+      },
+      include: {
+        costoProduccion: true,
+      },
+    });
+    const filtrados = registros.filter((r) => r.costoProduccion);
+    if (modo === "semana") {
+      const agrupados = filtrados.reduce((acc, r) => {
+        const semana = format(
+          startOfWeek(r.date, { weekStartsOn: 1 }),
+          "yyyy-MM-dd"
+        );
+        if (!acc[semana])
+          acc[semana] = {
+            semana,
+            total: 0,
+            count: 0,
+            margenUtilidadUnitario: 0,
+          };
+        acc[semana].total += r.costoProduccion!.totalCostoProduccionUnitario;
+        acc[semana].margenUtilidadUnitario +=
+          r.costoProduccion.margenUtilidadUnitario;
+        acc[semana].count += 1;
+        return acc;
+      }, {} as Record<string, { semana: string; total: number; count: number; margenUtilidadUnitario: number }>);
+      const datos = Object.values(agrupados).map(
+        ({ semana, total, count, margenUtilidadUnitario }) => ({
+          fecha: semana,
+          costoUnitario: total / count,
+          margenUtilidadUnitario: margenUtilidadUnitario,
+        })
+      );
+
+      return res.json(datos);
+    }
+    // Por día
+    const datos = filtrados.map((r) => ({
+      fecha: format(r.date, "yyyy-MM-dd"),
+      costoUnitario: r.costoProduccion!.totalCostoProduccionUnitario,
+      margenUtilidadUnitario: r.costoProduccion.margenUtilidadUnitario,
+    }));
+    res.json(datos);
+  } catch (error) {
     return res
       .status(500)
       .json({ message: "Error al obtener los registros de costos." });
