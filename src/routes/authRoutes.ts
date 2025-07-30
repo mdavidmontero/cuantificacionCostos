@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { body, param } from "express-validator";
-import { createAccount, login, getUser } from "../controllers/AuthController";
+import {
+  createAccount,
+  login,
+  getUser,
+  createUserOrganization,
+  getUsersAllOrganization,
+} from "../controllers/AuthController";
 import { handleInputErrors } from "../middleware/validation";
 import { isAuthenticated } from "../middleware/auth";
 
@@ -29,5 +35,16 @@ router.post(
   login
 );
 router.get("/user", isAuthenticated, getUser);
+router.post(
+  "/create-user-organization",
+  isAuthenticated,
+  createUserOrganization
+);
+
+router.get(
+  "/get-users-all-organization",
+  isAuthenticated,
+  getUsersAllOrganization
+);
 
 export default router;

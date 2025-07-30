@@ -111,7 +111,7 @@ export const login = async (req: Request, res: Response): Promise<any> => {
     res.send(token);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Hubo un error" });
+    return res.status(500).json({ error: "Hubo un error" });
   }
 };
 export const forgotPassword = async (
@@ -141,8 +141,7 @@ export const forgotPassword = async (
 
     res.send("Hemos enviado un codigo de confirmacion a su correo");
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Hubo un error" });
+    return res.status(500).json({ error: "Hubo un error" });
   }
 };
 
@@ -163,7 +162,7 @@ export const validateToken = async (
     }
     res.send("Token válido, Define tu nuevo password");
   } catch (error) {
-    res.status(500).json({ error: "Hubo un error" });
+    return res.status(500).json({ error: "Hubo un error" });
   }
 };
 
@@ -201,7 +200,7 @@ export const requestConfirmationCode = async (
     res.send("Hemos enviado un codigo de confirmacion a su correo");
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Hubo un error" });
+    return res.status(500).json({ error: "Hubo un error" });
   }
 };
 
@@ -276,7 +275,7 @@ export const updateProfile = async (
     res.send("Perfil actualizado correctamente");
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Hubo un error" });
+    return res.status(500).json({ error: "Hubo un error" });
   }
 };
 
@@ -367,7 +366,7 @@ export const updateCurrentUserPassword = async (
       res.status(500).send("Hubo un error");
     }
   } catch (error) {
-    res.status(500).send("Hubo un error");
+    return res.status(500).send("Hubo un error");
   }
 };
 
@@ -404,7 +403,7 @@ export const resetPasswordWithToken = async (
     });
     res.send("El password se modificó correctamente");
   } catch (error) {
-    res.status(500).send("Hubo un error");
+    return res.status(500).send("Hubo un error");
   }
 };
 
@@ -424,6 +423,43 @@ export const updateUserStatus = async (
     });
     res.send("Usuario actualizado correctamente");
   } catch (error) {
-    res.status(500).send("Hubo un error");
+    return res.status(500).send("Hubo un error");
+  }
+};
+
+export const createUserOrganization = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { name, email, password, role } = req.body;
+    await prisma.user.create({
+      data: {
+        name: name,
+        email: email,
+        password: password,
+        confirmed: true,
+        role: role,
+        organizationId: req.user.organizationId,
+        token: generateToken(),
+      },
+    });
+    res.send("Usuario creado correctamente");
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Hubo un error" });
+  }
+};
+
+export const getUsersAllOrganization = async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        organizationId: req.user.organizationId,
+      },
+    });
+    res.status(200).json(users);
+  } catch (error) {
+    return res.status(500).json({ error: "Hubo un error" });
   }
 };
