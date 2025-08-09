@@ -19,7 +19,7 @@ model User {
   email          String
   password       String
   confirmed      Boolean
-  role           String        @default("SUPER_ADMIN")
+  roles          String[]      @default(["user"])
   token          String        @default("")
   image          String?
   organizationId String?

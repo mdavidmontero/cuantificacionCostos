@@ -7,6 +7,10 @@ import { v4 as uuid } from "uuid";
 import { generateToken } from "../utils/token";
 import { prisma } from "../config/prisma";
 
+export interface JwtPayload {
+  id: string;
+}
+
 export const createAccount = async (
   req: Request,
   res: Response
@@ -37,12 +41,13 @@ export const createAccount = async (
 
     const passwordHash = await hashPassword(password);
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name: name,
         email: email,
         password: passwordHash,
         confirmed: true,
+        roles: ["admin"],
         token: generateToken(),
         organization: {
           create: {
@@ -52,7 +57,11 @@ export const createAccount = async (
         },
       },
     });
-    res.send("Cuenta creada correctamente");
+    delete user.password;
+    res.json({
+      user: user,
+      token: generateJWT({ id: user.id }),
+    });
   } catch (error) {
     console.log(error);
   }
@@ -95,6 +104,21 @@ export const login = async (req: Request, res: Response): Promise<any> => {
       where: {
         email: email,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        roles: true,
+        image: true,
+        password: true,
+        organizationId: true,
+        organization: {
+          select: {
+            name: true,
+            nit: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -108,7 +132,11 @@ export const login = async (req: Request, res: Response): Promise<any> => {
       return res.status(401).json({ error: error.message });
     }
     const token = generateJWT({ id: user.id });
-    res.send(token);
+    delete user.password;
+    res.json({
+      user: user,
+      token: token,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Hubo un error" });
@@ -245,7 +273,7 @@ export const uploadImage = async (
   }
 };
 export const getUser = async (req: Request, res: Response): Promise<any> => {
-  return res.json(req.user);
+  return res.json({ user: req.user, token: req.token });
 };
 
 export const updateProfile = async (
@@ -293,20 +321,17 @@ export const getUsers = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-export const getUsersAll = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
+export const getUsersAll = async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       where: {
-        role: "USER",
+        roles: { has: "user" },
       },
     });
     res.status(200).json(users);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Hubo un error" });
-    console.log(error);
   }
 };
 
@@ -433,13 +458,41 @@ export const createUserOrganization = async (
 ): Promise<any> => {
   try {
     const { name, email, password, role } = req.body;
+    const roleUserSuperAdminAndOrganization = await prisma.user.findFirst({
+      where: {
+        roles: {
+          equals: ["admin"],
+        },
+        email: req.user.email,
+        organization: {
+          id: req.user.organizationId,
+        },
+      },
+    });
+
+    if (!roleUserSuperAdminAndOrganization) {
+      const error = new Error(
+        "No tienes permisos para crear usuario en la organización"
+      );
+      return res.status(401).json({ error: error.message });
+    }
+    const userExist = await prisma.user.findFirst({
+      where: {
+        email: email,
+      },
+    });
+    if (userExist) {
+      const error = new Error("El correo ya esta registrado");
+      return res.status(409).json({ error: error.message });
+    }
+    const passwordHash = await hashPassword(password);
     await prisma.user.create({
       data: {
         name: name,
         email: email,
-        password: password,
+        password: passwordHash,
         confirmed: true,
-        role: role,
+        roles: [role],
         organizationId: req.user.organizationId,
         token: generateToken(),
       },

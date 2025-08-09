@@ -34,7 +34,7 @@ router.post(
   handleInputErrors,
   login
 );
-router.get("/user", isAuthenticated, getUser);
+router.get("/check-auth", isAuthenticated, getUser);
 router.post(
   "/create-user-organization",
   isAuthenticated,

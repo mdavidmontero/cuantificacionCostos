@@ -7,7 +7,9 @@ export const createOrganization = async (req: Request, res: Response) => {
     const { name, nit, nameAdmin, email, password } = req.body;
     const roleUserSuperAdmin = await prisma.user.findFirst({
       where: {
-        role: "SUPER_ADMIN",
+        roles: {
+          equals: ["admin"],
+        },
       },
     });
     if (!roleUserSuperAdmin) {
@@ -35,7 +37,7 @@ export const createOrganization = async (req: Request, res: Response) => {
             name: nameAdmin,
             email: email,
             password: hash,
-            role: "ADMIN",
+            roles: ["admin"],
             confirmed: true,
           },
         },
