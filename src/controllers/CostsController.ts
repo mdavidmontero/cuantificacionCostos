@@ -16,6 +16,7 @@ export const createCosts = async (req: Request, res: Response) => {
       manoObraDirecta = [],
       costosIndirectosFabricacion = [],
       manoObraIndirecta = [],
+      serviciosPublicos = [],
       costosGenerales = [],
       costosOperacion = [],
       gastosVentas = [],
@@ -98,6 +99,14 @@ export const createCosts = async (req: Request, res: Response) => {
             organizationId,
           })),
         },
+        serviciosPublicos: {
+          create: serviciosPublicos.map((item: any) => ({
+            nombre: item.nombre,
+            porcentaje: item.porcentaje,
+            vinculadoProduccion: item.vinculadoProduccion,
+            organizationId,
+          })),
+        },
       },
     });
 
@@ -110,7 +119,13 @@ export const createCosts = async (req: Request, res: Response) => {
           totalCostoProduccionUnitario:
             costoProduccion.totalCostoProduccionUnitario,
           precioVentaUnitario: costoProduccion.precioVentaUnitario,
+          precioCalculado: costoProduccion.precioCalculado,
           margenUtilidadUnitario: costoProduccion.margenUtilidadUnitario,
+          margenDeseado: costoProduccion.margenDeseado,
+          impuestos: costoProduccion.impuestos,
+          costosFinancieros: costoProduccion.costosFinancieros,
+          otrosGastos: costoProduccion.otrosGastos,
+          margenUtilidadNeto: costoProduccion.margenUtilidadNeto,
           organizationId,
           registroId: registro.id,
         },
@@ -128,8 +143,11 @@ export const getRegistroCompleto = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const registro = await prisma.registroCostoProduccion.findUnique({
-      where: { id },
+    const registro = await prisma.registroCostoProduccion.findFirst({
+      where: { 
+        id,
+        organizationId: req.user.organizationId
+      },
       include: {
         producto: true,
         organization: true,
@@ -137,6 +155,7 @@ export const getRegistroCompleto = async (req: Request, res: Response) => {
         manoObraDirecta: true,
         costosIndirectosFabricacion: true,
         manoObraIndirecta: true,
+        serviciosPublicos: true,
         costosGenerales: true,
         costosOperacion: true,
         gastosVentas: true,
@@ -167,10 +186,14 @@ export const getAllRegistrosCostos = async (req: Request, res: Response) => {
         manoObraDirecta: true,
         costosIndirectosFabricacion: true,
         manoObraIndirecta: true,
+        serviciosPublicos: true,
         costosGenerales: true,
         costosOperacion: true,
         gastosVentas: true,
         costoProduccion: true,
+      },
+      where: {
+        organizationId: req.user.organizationId,
       },
     });
 
@@ -185,7 +208,13 @@ export const getAllRegistrosCostos = async (req: Request, res: Response) => {
 
 export const getEvolucionCostos = async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, modo = "dia", productoId } = req.query;
+    const {
+      startDate,
+      endDate,
+      modo = "dia",
+      productoId,
+      tipoConsulta = "costos",
+    } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({
         message:
@@ -201,12 +230,14 @@ export const getEvolucionCostos = async (req: Request, res: Response) => {
             lte: end,
           },
           productoId: +productoId,
+          organizationId: req.user.organizationId,
         }
       : {
           date: {
             gte: start,
             lte: end,
           },
+          organizationId: req.user.organizationId,
         };
     const registros = await prisma.registroCostoProduccion.findMany({
       where: whereClause,
@@ -217,6 +248,9 @@ export const getEvolucionCostos = async (req: Request, res: Response) => {
         costoProduccion: true,
       },
     });
+
+    // Determinar si se consulta costos o precios
+    const consultarPrecios = tipoConsulta === "precios";
     const filtrados = registros.filter((r) => r.costoProduccion);
     if (modo === "semana") {
       const agrupados = filtrados.reduce((acc, r) => {
@@ -230,29 +264,62 @@ export const getEvolucionCostos = async (req: Request, res: Response) => {
             total: 0,
             count: 0,
             margenUtilidadUnitario: 0,
+            precioVenta: 0,
           };
         acc[semana].total += r.costoProduccion!.totalCostoProduccionUnitario;
         acc[semana].margenUtilidadUnitario +=
           r.costoProduccion.margenUtilidadUnitario;
+        acc[semana].precioVenta += r.costoProduccion.precioVentaUnitario;
         acc[semana].count += 1;
         return acc;
-      }, {} as Record<string, { semana: string; total: number; count: number; margenUtilidadUnitario: number }>);
+      }, {} as Record<string, { semana: string; total: number; count: number; margenUtilidadUnitario: number; precioVenta: number }>);
+
       const datos = Object.values(agrupados).map(
-        ({ semana, total, count, margenUtilidadUnitario }) => ({
-          fecha: semana,
-          costoUnitario: total / count,
-          margenUtilidadUnitario: margenUtilidadUnitario,
-        })
+        ({ semana, total, count, margenUtilidadUnitario, precioVenta }) => {
+          // Datos comunes
+          const datoComun = {
+            fecha: semana,
+          };
+
+          // Datos específicos según tipo de consulta
+          if (consultarPrecios) {
+            return {
+              ...datoComun,
+              precioVenta: precioVenta / count,
+              margenUtilidadUnitario: margenUtilidadUnitario / count,
+            };
+          } else {
+            return {
+              ...datoComun,
+              costoUnitario: total / count,
+            };
+          }
+        }
       );
 
       return res.json(datos);
     }
     // Por día
-    const datos = filtrados.map((r) => ({
-      fecha: format(r.date, "yyyy-MM-dd"),
-      costoUnitario: r.costoProduccion!.totalCostoProduccionUnitario,
-      margenUtilidadUnitario: r.costoProduccion.margenUtilidadUnitario,
-    }));
+    const datos = filtrados.map((r) => {
+      // Datos comunes
+      const datoComun = {
+        fecha: format(r.date, "yyyy-MM-dd"),
+      };
+
+      // Datos específicos según tipo de consulta
+      if (consultarPrecios) {
+        return {
+          ...datoComun,
+          precioVenta: r.costoProduccion!.precioVentaUnitario,
+          margenUtilidadUnitario: r.costoProduccion.margenUtilidadUnitario,
+        };
+      } else {
+        return {
+          ...datoComun,
+          costoUnitario: r.costoProduccion!.totalCostoProduccionUnitario,
+        };
+      }
+    });
     res.json(datos);
   } catch (error) {
     return res

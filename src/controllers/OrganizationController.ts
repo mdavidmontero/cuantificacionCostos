@@ -62,6 +62,13 @@ export const updateOrganization = async (req: Request, res: Response) => {
       const error = new Error("Organizacion no encontrada");
       return res.status(404).json({ error: error.message });
     }
+    
+    // Verificar que el usuario pertenece a la organización que intenta actualizar
+    if (organization.id !== req.user.organizationId) {
+      const error = new Error("No tienes permisos para actualizar esta organización");
+      return res.status(403).json({ error: error.message });
+    }
+    
     await prisma.organization.update({
       where: {
         id: organization.id,
@@ -89,6 +96,13 @@ export const getOrganization = async (req: Request, res: Response) => {
       const error = new Error("Organizacion no encontrada");
       return res.status(404).json({ error: error.message });
     }
+    
+    // Verificar que el usuario pertenece a la organización que intenta obtener
+    if (organization.id !== req.user.organizationId) {
+      const error = new Error("No tienes permisos para acceder a esta organización");
+      return res.status(403).json({ error: error.message });
+    }
+    
     res.status(200).json(organization);
   } catch (error) {
     console.log(error);

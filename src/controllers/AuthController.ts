@@ -312,6 +312,7 @@ export const getUsers = async (req: Request, res: Response): Promise<any> => {
     const users = await prisma.user.findMany({
       where: {
         confirmed: true,
+        organizationId: req.user.organizationId,
       },
     });
     res.status(200).json(users);
@@ -326,6 +327,7 @@ export const getUsersAll = async (req: Request, res: Response) => {
     const users = await prisma.user.findMany({
       where: {
         roles: { has: "user" },
+        organizationId: req.user.organizationId,
       },
     });
     res.status(200).json(users);
@@ -438,6 +440,18 @@ export const updateUserStatus = async (
 ): Promise<any> => {
   const { userId, status } = req.body;
   try {
+    // Verificar que el usuario pertenece a la misma organización
+    const userToUpdate = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        organizationId: req.user.organizationId,
+      },
+    });
+
+    if (!userToUpdate) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
     await prisma.user.update({
       where: {
         id: userId,
