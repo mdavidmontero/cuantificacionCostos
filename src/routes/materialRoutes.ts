@@ -1,14 +1,15 @@
 import { Router } from "express";
-import {
-  createMateriaPrima,
-  updateMateriaPrima,
-  getMateriaPrimaById,
-  getMateriaPrimas,
-  searchMaterialPrima,
-} from "../controllers/MaterialController";
+
 import { body } from "express-validator";
 import { handleInputErrors } from "../middleware/validation";
 import { isAuthenticated } from "../middleware/auth";
+import {
+  createMateriaPrima,
+  getMateriaPrimaById,
+  getMateriaPrimas,
+  searchMaterialPrima,
+  updateMateriaPrima,
+} from "../controllers/materialController";
 
 const router = Router();
 
