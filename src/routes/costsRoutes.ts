@@ -12,7 +12,7 @@ const router = Router();
 
 router.post("/create-costs", isAuthenticated, createCosts);
 router.get("/get-all-costs", isAuthenticated, getAllRegistrosCostos);
-router.get("/get-cost-by-id/:id", getRegistroCompleto);
+router.get("/get-cost-by-id/:id", isAuthenticated, getRegistroCompleto);
 router.get("/get-evolution-costs", isAuthenticated, getEvolucionCostos);
 
 export default router;
