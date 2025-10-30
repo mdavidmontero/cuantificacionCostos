@@ -164,12 +164,13 @@ export const getRegistroCompleto = async (req: Request, res: Response) => {
     });
 
     if (!registro) {
-      return res.status(404).json({ message: "Registro no encontrado" });
+      const error = new Error("Registro no encontrado");
+      return res.status(404).json({ error: error.message });
     }
     res.send(registro);
   } catch (error) {
     console.error("Error al obtener el registro completo:", error);
-    return res.status(500).json({ message: "Error interno del servidor" });
+    return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
 
@@ -202,7 +203,7 @@ export const getAllRegistrosCostos = async (req: Request, res: Response) => {
     console.error("Error al obtener los registros de costos:", error);
     return res
       .status(500)
-      .json({ message: "Error al obtener los registros de costos." });
+      .json({ error: "Error al obtener los registros de costos." });
   }
 };
 
@@ -217,7 +218,7 @@ export const getEvolucionCostos = async (req: Request, res: Response) => {
     } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({
-        message:
+        error:
           "Debe proporcionar 'startDate' y 'endDate' en formato YYYY-MM-DD",
       });
     }
@@ -324,7 +325,7 @@ export const getEvolucionCostos = async (req: Request, res: Response) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Error al obtener los registros de costos." });
+      .json({ error: "Error al obtener los registros de costos." });
   }
 };
 
@@ -334,7 +335,8 @@ export const deleteCost = async (req: Request, res: Response) => {
     const organizationId = req.user.organizationId;
 
     if (!id || !organizationId) {
-      return res.status(400).json({ message: "Faltan datos obligatorios" });
+      const error = new Error("Faltan datos obligatorios");
+      return res.status(400).json({ error: error.message });
     }
 
     const registro = await prisma.registroCostoProduccion.findUnique({
@@ -343,16 +345,17 @@ export const deleteCost = async (req: Request, res: Response) => {
     });
 
     if (!registro || registro.organizationId !== organizationId) {
-      return res.status(404).json({ message: "Registro no encontrado" });
+      const error = new Error("Registro no encontrado");
+      return res.status(404).json({ error: error.message });
     }
 
     await prisma.registroCostoProduccion.delete({
       where: { id },
     });
 
-    return res.json({ message: "Registro de costos eliminado con éxito" });
+    return res.send("Registro de costos eliminado con éxito");
   } catch (error) {
     console.error("Error al eliminar el registro de costos:", error);
-    return res.status(500).json({ message: "Error interno del servidor" });
+    return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
